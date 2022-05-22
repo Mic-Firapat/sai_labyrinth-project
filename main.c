@@ -81,7 +81,6 @@ void affichecube(float x1, float y1, float z1, float x2, float y2, float z2){
     glEnd();
 }
 
-
 void GererClavier(unsigned char key, int x, int y){
     //printf("Touche : %c\nSouris : %d %d\n",key,x,y);
     if (key == 'z') {
@@ -94,17 +93,32 @@ void GererClavier(unsigned char key, int x, int y){
         posx += -V_DEP*cos(angler);
         posz += -V_DEP*sin(angler);
     }
+    if( key == 'q') {
+      float angler =  M_PI / 180 * angle;
+      posx += V_DEP*sin(angler);
+      posz += -V_DEP*cos(angler);
+    }
+    if ( key == 'd') {
+      float angler = M_PI / 180 * angle;
+      posx += -V_DEP*sin(angler);
+      posz += V_DEP*cos(angler);
+    }
     if (key == 'o') { posy +=1;}
     if (key == 'l') { posy -= 1;}
     if (key == 'p') {looky += 1;}
     if (key == 'm') {looky -= 1;}
-    if (key == 'q'){
+    if (key == 'a'){
         angle = (angle >= V_ROTAT) ? angle - V_ROTAT : angle + 360 - V_ROTAT; 
     }
-    if (key == 'd'){
+    if (key == 'e'){
         angle = (angle <360 - V_ROTAT) ? angle + V_ROTAT : angle - 360 + V_ROTAT;
     }
+
+    if ( key == 27){
+      exit(0);
+    }
 }
+
 
 void affichage(){
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
