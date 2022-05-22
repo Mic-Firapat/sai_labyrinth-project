@@ -35,6 +35,11 @@ float lookx = -15,
     looky = 0,
     lookz = -15;
 
+int mouseIn = 0,
+    mousex = 0,
+    mousey = 0;
+
+
 float *listecubes;
 int nbcubes;
 //Affiche le cube décrit par les deux sommets opposés (x1,y1,z1) et (x2,y2,z2)
@@ -86,6 +91,47 @@ void affichecube(float x1, float y1, float z1, float x2, float y2, float z2){
     glEnd();
 }
 
+void GererCliqueSouris(int button, int state, int x, int y){
+  if( ( (x >= 0) && (x <= WIDTH) ) && ( (y >= 0) && (y <= LENGTH) ) ){
+    if(button == GLUT_LEFT_BUTTON){
+      mouseIn = 1;
+      glutSetCursor(GLUT_CURSOR_NONE);
+      glutWarpPointer(WIDTH/2, LENGTH/2);
+      mousex = WIDTH/2;
+      mousey = LENGTH/2;
+    }
+    else if (button == GLUT_RIGHT_BUTTON){
+      mouseIn = 0;
+      glutSetCursor(GLUT_CURSOR_LEFT_ARROW);
+    }
+  }
+}
+
+
+void GererMouvementSouris(int x, int y){
+  int dx = mousex - x, dy = mousey - y;
+  
+  if(mouseIn){
+
+    if( dx > 0) {angle -= 0.5;}
+    if( dx < 0) {angle += 0.5;}
+
+    if( dy > 0) {looky += 0.5;}
+    if( dy < 0) {looky -= 0.5;}
+
+
+    if ( (x < WIDTH - 50  && x > 20) && (y < LENGTH -50 && y > 20) ){
+      mousex = x;
+      mousey = y;
+    }
+    else {
+      mousex = WIDTH/2;
+      mousey = LENGTH/2;
+      glutWarpPointer(WIDTH/2, LENGTH/2);
+    }
+  }
+  
+}
 
 void GererClavier(unsigned char key, int x, int y){
     //printf("Touche : %c\nSouris : %d %d\n",key,x,y);
@@ -99,15 +145,29 @@ void GererClavier(unsigned char key, int x, int y){
         posx += -V_DEP*cos(angler);
         posz += -V_DEP*sin(angler);
     }
+    if( key == 'q') {
+      float angler =  M_PI / 180 * angle;
+      posx += V_DEP*sin(angler);
+      posz += -V_DEP*cos(angler);
+    }
+    if ( key == 'd') {
+      float angler = M_PI / 180 * angle;
+      posx += -V_DEP*sin(angler);
+      posz += V_DEP*cos(angler);
+    }
     if (key == 'o') { posy +=1;}
     if (key == 'l') { posy -= 1;}
     if (key == 'p') {looky += 1;}
     if (key == 'm') {looky -= 1;}
-    if (key == 'q'){
+    if (key == 'a'){
         angle = (angle >= V_ROTAT) ? angle - V_ROTAT : angle + 360 - V_ROTAT; 
     }
-    if (key == 'd'){
+    if (key == 'e'){
         angle = (angle <360 - V_ROTAT) ? angle + V_ROTAT : angle - 360 + V_ROTAT;
+    }
+
+    if ( key == 27){
+      exit(0);
     }
 }
 
@@ -429,6 +489,8 @@ int main(int argc, char **argv){
     glEnable(GL_DEPTH_TEST);
     glutDisplayFunc(affichage);
     glutKeyboardFunc(GererClavier);
+    glutMouseFunc(GererCliqueSouris);
+    glutPassiveMotionFunc(GererMouvementSouris);
     glutIdleFunc(Animer);
     glutMainLoop();
     exit(0);
