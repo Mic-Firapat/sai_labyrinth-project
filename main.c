@@ -4,6 +4,7 @@
 #include "GL/glut.h"
 #include <time.h>
 #include <math.h>
+#include <string.h>
 
 #define WIDTH 720
 #define LENGTH 720
@@ -43,6 +44,56 @@ int mouseIn = 0,
 float *listecubes;
 int nbcubes;
 
+
+int affiche_texte = 0;
+
+//Texture
+
+
+GLuint texture;
+GLuint mur;
+
+
+GLuint ChargeTexture(GLuint tex, const char * fichier, int w, int h){
+
+  unsigned char * data;
+  FILE * file;
+
+
+  // Lecture fichier image
+
+  file = fopen(fichier, "rb");
+  if ( file == NULL) return 0;
+  data = (unsigned char *)malloc(w*h*3);
+  fread(data, w*h*3,1,file);
+  fclose(file);
+
+  // Gentexture
+  glGenTextures(1, &tex);
+  glBindTexture(GL_TEXTURE_2D, tex);
+  glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+  glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+
+
+  // Paramètrage texture
+  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST );
+  glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+  glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT );
+  glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT );
+
+
+  // Mipmaps des textures
+  gluBuild2DMipmaps( GL_TEXTURE_2D, 3, w, h,GL_RGB, GL_UNSIGNED_BYTE, data );
+  free(data);
+
+  return tex;
+}
+
+
+void FreeTexture(GLuint texture){
+  glDeleteTextures(1, &texture);
+}
+
 //Donne la position dans la grille du joueur actuellement (uniquement utilisée pour certains trucs
 int *posDansGrille(){
     int *pos = malloc(sizeof(int)*3);
@@ -55,50 +106,56 @@ int *posDansGrille(){
 }
 //Affiche le cube décrit par les deux sommets opposés (x1,y1,z1) et (x2,y2,z2)
 void affichecube(float x1, float y1, float z1, float x2, float y2, float z2){
+  
+  glEnable(GL_TEXTURE_2D);
+  glBindTexture(GL_TEXTURE_2D, mur);
     glBegin(GL_QUADS);
     //Face décrite par z = z1
     glColor3f(1,0,0);
-    glVertex3f(x1,y1,z1);
-    glVertex3f(x1,y2,z1);
-    glVertex3f(x2,y2,z1);
-    glVertex3f(x2,y1,z1);
+    glTexCoord2f(0.0,0.0);glVertex3f(x1,y1,z1);
+    glTexCoord2f(1,0.0);glVertex3f(x1,y2,z1);
+    glTexCoord2f(1,1);glVertex3f(x2,y2,z1);
+    glTexCoord2f(0.0,1);glVertex3f(x2,y1,z1);
 
     //Face décrite par z = z2
     glColor3f(0,1,0);
-    glVertex3f(x1,y1,z2);
-    glVertex3f(x1,y2,z2);
-    glVertex3f(x2,y2,z2);
-    glVertex3f(x2,y1,z2);
+    glTexCoord2f(0.0,0.0);glVertex3f(x1,y1,z2);
+    glTexCoord2f(1,0.0);glVertex3f(x1,y2,z2);
+    glTexCoord2f(1,1);glVertex3f(x2,y2,z2);
+    glTexCoord2f(0.0,1);glVertex3f(x2,y1,z2);
 
     //Face décrite par x = x1
     glColor3f(0,1,1);
-    glVertex3f(x1,y1,z1);
-    glVertex3f(x1,y2,z1);
-    glVertex3f(x1,y2,z2);
-    glVertex3f(x1,y1,z2);
+    glTexCoord2f(0.0,0.0);glVertex3f(x1,y1,z1);
+    glTexCoord2f(1,0.0);glVertex3f(x1,y2,z1);
+    glTexCoord2f(1,1);glVertex3f(x1,y2,z2);
+    glTexCoord2f(0.0,1);glVertex3f(x1,y1,z2);
 
 
     //Face décrite par x = x2
     glColor3f(1,1,0);
-    glVertex3f(x2,y1,z1);
-    glVertex3f(x2,y2,z1);
-    glVertex3f(x2,y2,z2);
-    glVertex3f(x2,y1,z2);
+    glTexCoord2f(0.0,0.0);glVertex3f(x2,y1,z1);
+    glTexCoord2f(1,0.0);glVertex3f(x2,y2,z1);
+    glTexCoord2f(1,1);glVertex3f(x2,y2,z2);
+    glTexCoord2f(0.0,1);glVertex3f(x2,y1,z2);
+
+    glBindTexture(GL_TEXTURE_2D, texture);
 
     //Face décrite par y = y1
-    glColor3f(0.9, 0.64,0);
-    glVertex3f(x1,y1,z1);
-    glVertex3f(x1,y1,z2);
-    glVertex3f(x2,y1,z2);
-    glVertex3f(x2,y1,z1);
+    //glColor3f(0.9, 0.64,0);
+    
+    glTexCoord2f(0.0,0.0);glVertex3f(x1,y1,z1);
+    glTexCoord2f(1,0.0);glVertex3f(x1,y1,z2);
+    glTexCoord2f(1,1);glVertex3f(x2,y1,z2);
+    glTexCoord2f(0.0,1);glVertex3f(x2,y1,z1);
 
     //Face décrite par y = y2
-    glColor3f(0.9, 0.64,0);
-    glVertex3f(x1,y2,z1);
-    glVertex3f(x1,y2,z2);
-    glVertex3f(x2,y2,z2);
-    glVertex3f(x2,y2,z1);
-    
+    //glColor3f(0.9, 0.64,0);
+    glTexCoord2f(0.0,0.0);glVertex3f(x1,y2,z1);
+    glTexCoord2f(1,0.0);glVertex3f(x1,y2,z2);
+    glTexCoord2f(1,1);glVertex3f(x2,y2,z2);
+    glTexCoord2f(0.0,1);glVertex3f(x2,y2,z1);
+    glDisable(GL_TEXTURE_2D);
     glEnd();
 }
 
@@ -189,6 +246,14 @@ void GererClavier(unsigned char key, int x, int y){
         angle = (angle <360 - V_ROTAT) ? angle + V_ROTAT : angle - 360 + V_ROTAT;
     }
 
+    if (key == 'h'){
+      if( affiche_texte == 1){
+	affiche_texte = 0;
+      }
+      else { affiche_texte++;}
+    }
+
+
     if ( key == 27){
       exit(0);
     }
@@ -200,6 +265,30 @@ void GererClavier(unsigned char key, int x, int y){
 
 void affichage(){
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+
+    if(affiche_texte){
+      glColor3f(1.0, 1.0, 1.0);
+      //glDisable(GL_TEXTURE_2D);
+      glMatrixMode(GL_PROJECTION);
+      glPushMatrix();
+      glLoadIdentity();
+      gluOrtho2D(0.0,WIDTH,0.0,LENGTH);
+      glMatrixMode(GL_MODELVIEW);
+      glPushMatrix();
+      glLoadIdentity();
+      glRasterPos2i(WIDTH/2, LENGTH/2);
+      char *s = "Test";
+      void * font = GLUT_BITMAP_9_BY_15;
+      for(int i = 0; i < (int)strlen(s); i++){
+	glutBitmapCharacter(font,s[i]);
+      }
+      glMatrixMode(GL_PROJECTION);
+      glPopMatrix();
+      glMatrixMode(GL_MODELVIEW);
+      glPopMatrix();
+      //glEnable(GL_TEXTURE_2D);
+    }
 
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
@@ -214,18 +303,22 @@ void affichage(){
     glLoadIdentity();
 
     nbcubes = 0;
+    
     for (int i = 0; i < NB_ETAGE; i++){
         for (int j = 0; j < W_ETAGE; j++){
             
             for (int k = 0; k < L_ETAGE; k++){
                 if (batiment[i][j][k] != 2 && batiment[i][j][k] != 3){
-                    glBegin(GL_QUADS);
-                    glColor3f(0.9, 0.64,0);
-                    glVertex3f(k*L_CASE,i * H_ETAGE,j*W_CASE);
-                    glVertex3f((k+1)*L_CASE,i* H_ETAGE,j*W_CASE);
-                    glVertex3f((k+1)*L_CASE, i *H_ETAGE, (j+1)*W_CASE);
-                    glVertex3f(k*L_CASE, i *H_ETAGE, (j+1)*W_CASE);
-                    glEnd();
+		  glEnable(GL_TEXTURE_2D);
+		  glBindTexture(GL_TEXTURE_2D, texture);
+		  glBegin(GL_QUADS);
+		  glColor3f(1.0,1.0,1.0);
+                    glTexCoord2f(0.0,0.0);glVertex3f(k*L_CASE,i * H_ETAGE,j*W_CASE);
+                    glTexCoord2f(1,0.0);glVertex3f((k+1)*L_CASE,i* H_ETAGE,j*W_CASE);
+                    glTexCoord2f(1,1);glVertex3f((k+1)*L_CASE, i *H_ETAGE, (j+1)*W_CASE);
+                    glTexCoord2f(0.0,1);glVertex3f(k*L_CASE, i *H_ETAGE, (j+1)*W_CASE);
+		  glEnd();
+		  glDisable(GL_TEXTURE_2D);
                 }
                 if (batiment[i][j][k] == 0){
                     //Zone vide où on peut se déplacer
@@ -537,8 +630,12 @@ int main(int argc, char **argv){
     glutInitWindowSize(WIDTH,LENGTH);
     glutInitWindowPosition(42,42);
 
+    
+
     glutCreateWindow("Trwa dai");
     glEnable(GL_DEPTH_TEST);
+    texture = ChargeTexture(texture, "Texture/Sol.bmp",632,632);
+    mur = ChargeTexture(mur, "Texture/Mur.bmp",632,632);
     glutDisplayFunc(affichage);
     glutKeyboardFunc(GererClavier);
     glutMouseFunc(GererCliqueSouris);
@@ -547,3 +644,5 @@ int main(int argc, char **argv){
     glutMainLoop();
     exit(0);
 }
+
+
