@@ -45,13 +45,13 @@ float *listecubes;
 int nbcubes;
 
 
-int affiche_texte = 0;
+int affiche_texte = 0, xray=0, hitbox=0;
+int nbObjet = 0;
 
 //Texture
-
-
 GLuint texture;
 GLuint mur;
+
 
 
 GLuint ChargeTexture(GLuint tex, const char * fichier, int w, int h){
@@ -90,6 +90,7 @@ GLuint ChargeTexture(GLuint tex, const char * fichier, int w, int h){
 }
 
 
+// Libère la mémoire de texture
 void FreeTexture(GLuint texture){
   glDeleteTextures(1, &texture);
 }
@@ -106,7 +107,8 @@ int *posDansGrille(){
 }
 //Affiche le cube décrit par les deux sommets opposés (x1,y1,z1) et (x2,y2,z2)
 void affichecube(float x1, float y1, float z1, float x2, float y2, float z2){
-  
+
+  if(!hitbox){
   glEnable(GL_TEXTURE_2D);
   glBindTexture(GL_TEXTURE_2D, mur);
     glBegin(GL_QUADS);
@@ -157,9 +159,99 @@ void affichecube(float x1, float y1, float z1, float x2, float y2, float z2){
     glTexCoord2f(0.0,1);glVertex3f(x2-0.01,y2-0.01,z1+0.01);
     glDisable(GL_TEXTURE_2D);
     glEnd();
+  }
+
+  else {
+    glLineWidth(7);
+    glBegin(GL_LINE_LOOP);
+    glColor3f(0,1,0);
+    //Face décrite par z = z1
+    glVertex3f(x1,y1,z1);
+    glVertex3f(x1,y2,z1);
+    glVertex3f(x2,y2,z1);
+    glVertex3f(x2,y1,z1);
+
+    //Face décrite par z = z2
+    glVertex3f(x1,y1,z2);
+    glVertex3f(x1,y2,z2);
+    glVertex3f(x2,y2,z2);
+    glVertex3f(x2,y1,z2);
+
+    //Face décrite par x = x1
+    glVertex3f(x1,y1,z1);
+    glVertex3f(x1,y2,z1);
+    glVertex3f(x1,y2,z2);
+    glVertex3f(x1,y1,z2);
+
+
+    //Face décrite par x = x2
+    glVertex3f(x2,y1,z1);
+    glVertex3f(x2,y2,z1);
+    glVertex3f(x2,y2,z2);
+    glVertex3f(x2,y1,z2);
+
+    //Face décrite par y = y1
+    glVertex3f(x1+0.01,y1+0.01,z1+0.01);
+    glVertex3f(x1+0.01,y1+0.01,z2-0.01);
+    glVertex3f(x2-0.01,y1+0.01,z2-0.01);
+    glVertex3f(x2-0.01,y1+0.01,z1+0.01);
+
+    //Face décrite par y = y2
+    glVertex3f(x1+0.01,y2-0.01,z1+0.01);
+    glVertex3f(x1+0.01,y2-0.01,z2-0.01);
+    glVertex3f(x2-0.01,y2-0.01,z2-0.01);
+    glVertex3f(x2-0.01,y2-0.01,z1+0.01);
+    glEnd();
+  }
+
 }
 
 
+void afficheObjet(float x1, float y1, float z1, float x2, float y2, float z2){
+  glBegin(GL_QUADS);
+  //Face décrite par z = z1
+  glColor3f(1,0.5,1);
+  glVertex3f(x1+W_CASE/2.3,y1+3,z1+W_CASE/2.3);
+  glVertex3f(x1+W_CASE/2.3,y2-4,z1+W_CASE/2.3);
+  glVertex3f(x2-W_CASE/2.3,y2-4,z1+W_CASE/2.3);
+  glVertex3f(x2-W_CASE/2.3,y1+3,z1+W_CASE/2.3);
+
+  //Face décrite par z = z2
+  glVertex3f(x1+W_CASE/2.3,y1+3,z2-W_CASE/2.3);
+  glVertex3f(x1+W_CASE/2.3,y2-4,z2-W_CASE/2.3);
+  glVertex3f(x2-W_CASE/2.3,y2-4,z2-W_CASE/2.3);
+  glVertex3f(x2-W_CASE/2.3,y1+3,z2-W_CASE/2.3);
+
+  //Face décrite par x = x1
+  glVertex3f(x1+W_CASE/2.3,y1+3,z1+W_CASE/2.3);
+  glVertex3f(x1+W_CASE/2.3,y2-4,z1+W_CASE/2.3);
+  glVertex3f(x1+W_CASE/2.3,y2-4,z2-W_CASE/2.3);
+  glVertex3f(x1+W_CASE/2.3,y1+3,z2-W_CASE/2.3);
+
+
+  //Face décrite par x = x2
+  glVertex3f(x2-W_CASE/2.3,y1+3,z1+W_CASE/2.3);
+  glVertex3f(x2-W_CASE/2.3,y2-4,z1+W_CASE/2.3);
+  glVertex3f(x2-W_CASE/2.3,y2-4,z2-W_CASE/2.3);
+  glVertex3f(x2-W_CASE/2.3,y1+3,z2-W_CASE/2.3);
+
+  //Face décrite par y = y1
+  glVertex3f(x1+W_CASE/2.3,y1+3,z1+W_CASE/2.3);
+  glVertex3f(x1+W_CASE/2.3,y1+3,z2-W_CASE/2.3);
+  glVertex3f(x2-W_CASE/2.3,y1+3,z2-W_CASE/2.3);
+  glVertex3f(x2-W_CASE/2.3,y1+3,z1+W_CASE/2.3);
+
+  //Face décrite par y = y2
+  glVertex3f(x1+W_CASE/2.3,y2-4,z1+W_CASE/2.3);
+  glVertex3f(x1+W_CASE/2.3,y2-4,z2-W_CASE/2.3);
+  glVertex3f(x2-W_CASE/2.3,y2-4,z2-W_CASE/2.3);
+  glVertex3f(x2-W_CASE/2.3,y2-4,z1+W_CASE/2.3);
+  glEnd();
+}
+
+
+
+// Gestion des évènements clic de la souris
 void GererCliqueSouris(int button, int state, int x, int y){
   if( ( (x >= 0) && (x <= WIDTH) ) && ( (y >= 0) && (y <= LENGTH) ) ){
     if(button == GLUT_LEFT_BUTTON){
@@ -176,7 +268,7 @@ void GererCliqueSouris(int button, int state, int x, int y){
   }
 }
 
-
+// Gestion des évènements mouvement de la souris
 void GererMouvementSouris(int x, int y){
   int dx = mousex - x, dy = mousey - y;
   
@@ -210,6 +302,21 @@ void collisions(float *x, float *y, float *z){
 void GererClavier(unsigned char key, int x, int y){
     //printf("Touche : %c\nSouris : %d %d\n",key,x,y);
     float tmpx = posx, tmpy = posy, tmpz = posz;
+
+    if (key == 'x') {
+      if(xray == 0) {xray ++;}
+      else {xray--;}
+    }
+
+    if( key == 'b'){
+      if(hitbox == 0) {hitbox++;}
+      else {hitbox--;}
+    }
+
+    if(key == 'g'){
+      printf("GHOSTING\n");
+    }
+    
     if (key == 'z') {
         float angler = M_PI / 180 * angle;
         tmpx += V_DEP*cos(angler);
@@ -269,8 +376,8 @@ void affichage(){
 
 
     if(affiche_texte){
-      glColor3f(1.0, 1.0, 1.0);
       //glDisable(GL_TEXTURE_2D);
+      glColor3f(1,1,1);
       glMatrixMode(GL_PROJECTION);
       glPushMatrix();
       glLoadIdentity();
@@ -312,8 +419,10 @@ void affichage(){
                 if (batiment[i][j][k] != 2 && batiment[i][j][k] != 3){
 		  glEnable(GL_TEXTURE_2D);
 		  glBindTexture(GL_TEXTURE_2D, texture);
-		  glBegin(GL_QUADS);
-		  glColor3f(1.0,1.0,1.0);
+		  // Affichage du sol
+		  if(!xray){
+		    glBegin(GL_QUADS);
+		    glColor3f(1,1,1);
                     glTexCoord2f(0.0,0.0);glVertex3f(k*L_CASE,i * H_ETAGE,j*W_CASE);
                     glTexCoord2f(0.5,0.0);glVertex3f((k+1)*L_CASE,i* H_ETAGE,j*W_CASE);
                     glTexCoord2f(0.5,0.5);glVertex3f((k+1)*L_CASE, i *H_ETAGE, (j+1)*W_CASE);
@@ -322,7 +431,18 @@ void affichage(){
 		    glDisable(GL_TEXTURE_2D);
 		    glEnd();
 		  
-                }
+		  }
+		  else{
+		    glLineWidth(10);
+		    glBegin(GL_LINE_LOOP);
+		    glColor3f(1,0,0);
+		    glVertex3f(k*L_CASE,i * H_ETAGE,j*W_CASE);
+		    glVertex3f((k+1)*L_CASE,i* H_ETAGE,j*W_CASE);
+		    glVertex3f((k+1)*L_CASE, i *H_ETAGE, (j+1)*W_CASE);
+		    glVertex3f(k*L_CASE, i *H_ETAGE, (j+1)*W_CASE);
+		    glEnd();
+		  }
+		}
                 if (batiment[i][j][k] == 0){
                     //Zone vide où on peut se déplacer
                     nbcubes += 0;
@@ -341,7 +461,7 @@ void affichage(){
                     //Téléporteur ascendant
 		  glEnable(GL_TEXTURE_2D);
 		  glBegin(GL_QUADS);
-		  glColor3f(0.9, 0.9,0.9);
+		  glColor3f(1,1,1);
 		  glTexCoord2f(0.55,0.55);glVertex3f(k*L_CASE,i * H_ETAGE,j*W_CASE);
 		  glTexCoord2f(1,0.55);glVertex3f((k+1)*L_CASE,i* H_ETAGE,j*W_CASE);
 		  glTexCoord2f(1,1);glVertex3f((k+1)*L_CASE, i *H_ETAGE, (j+1)*W_CASE);
@@ -379,6 +499,10 @@ void affichage(){
                     listecubes[nbcubes*6 + 5] = tmp + tmp2;
                     nbcubes ++;
                 }
+		else if(batiment[i][j][k] == 5){
+		  // Objet à ramasser
+		  afficheObjet(k*L_CASE,i * H_ETAGE,j * W_CASE,(k+1) * L_CASE,(i+1) * H_ETAGE,(j+1) * W_CASE);
+		}
                 else if (batiment[i][j][k] % 2 == 0){
                     //Mur vertical uniquement
                     int tmp = k*L_CASE + 0.5 * L_CASE;
@@ -408,6 +532,7 @@ void affichage(){
             }
         }
     }
+    glColor3f(0.9,0.9,0.9);
     for (int i = 0; i < nbcubes; i++){
         affichecube(listecubes[i*6],listecubes[i*6+1],listecubes[i*6+2],listecubes[i*6+3],listecubes[i*6+4],listecubes[i*6+5]);
     }
@@ -565,6 +690,7 @@ void construire_labyrinthe(){
                 //On casse le mur entre les deux
                 batiment[i][voisins[choix][2]][voisins[choix][3]] = 0;
             }
+	    
         } while (courant != 0);
         //On a fini cet étage on passe au suivant
     }
@@ -619,6 +745,31 @@ void construire_labyrinthe(){
             }
         }
     }
+
+    //On va intégrer un objet dans chaque étage
+    for (int i = 0; i < NB_ETAGE; i++){
+      int j = 1, k = 1; 
+      while ( nbObjet <= i){
+	if (j == W_ETAGE-1){
+	  j = 1;
+	  k = 1;
+	}
+	else if(k == L_ETAGE-1){
+	  k = 1;
+	  j++;
+	}
+	else if (batiment[i][j][k] == 0){
+	  int rg = rand() % 100;
+	  if(rg < 10){
+	    batiment[i][j][k] = 5;
+	    nbObjet++;
+	  }
+	}
+	k++;    
+      }
+    }
+   
+    
 }
 int main(int argc, char **argv){
 
@@ -649,7 +800,7 @@ int main(int argc, char **argv){
     glutIdleFunc(Animer);
     glutMainLoop();
     FreeTexture(texture);
-    FreeTexture(mur);	
+    FreeTexture(mur);
     exit(0);
 }
 
