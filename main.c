@@ -144,20 +144,21 @@ void affichecube(float x1, float y1, float z1, float x2, float y2, float z2){
     //Face décrite par y = y1
     //glColor3f(0.9, 0.64,0);
     
-    glTexCoord2f(0.0,0.0);glVertex3f(x1,y1,z1);
-    glTexCoord2f(1,0.0);glVertex3f(x1,y1,z2);
-    glTexCoord2f(1,1);glVertex3f(x2,y1,z2);
-    glTexCoord2f(0.0,1);glVertex3f(x2,y1,z1);
+    glTexCoord2f(0.0,0.0);glVertex3f(x1+0.01,y1+0.01,z1+0.01);
+    glTexCoord2f(1,0.0);glVertex3f(x1+0.01,y1+0.01,z2-0.01);
+    glTexCoord2f(1,1);glVertex3f(x2-0.01,y1+0.01,z2-0.01);
+    glTexCoord2f(0.0,1);glVertex3f(x2-0.01,y1+0.01,z1+0.01);
 
     //Face décrite par y = y2
     //glColor3f(0.9, 0.64,0);
-    glTexCoord2f(0.0,0.0);glVertex3f(x1,y2,z1);
-    glTexCoord2f(1,0.0);glVertex3f(x1,y2,z2);
-    glTexCoord2f(1,1);glVertex3f(x2,y2,z2);
-    glTexCoord2f(0.0,1);glVertex3f(x2,y2,z1);
+    glTexCoord2f(0.0,0.0);glVertex3f(x1+0.01,y2-0.01,z1+0.01);
+    glTexCoord2f(1,0.0);glVertex3f(x1+0.01,y2-0.01,z2-0.01);
+    glTexCoord2f(1,1);glVertex3f(x2-0.01,y2-0.01,z2-0.01);
+    glTexCoord2f(0.0,1);glVertex3f(x2-0.01,y2-0.01,z1+0.01);
     glDisable(GL_TEXTURE_2D);
     glEnd();
 }
+
 
 void GererCliqueSouris(int button, int state, int x, int y){
   if( ( (x >= 0) && (x <= WIDTH) ) && ( (y >= 0) && (y <= LENGTH) ) ){
@@ -279,7 +280,7 @@ void affichage(){
       glLoadIdentity();
       glRasterPos2i(WIDTH/2, LENGTH/2);
       char *s = "Test";
-      void * font = GLUT_BITMAP_9_BY_15;
+      void * font = GLUT_BITMAP_TIMES_ROMAN_24;
       for(int i = 0; i < (int)strlen(s); i++){
 	glutBitmapCharacter(font,s[i]);
       }
@@ -314,11 +315,13 @@ void affichage(){
 		  glBegin(GL_QUADS);
 		  glColor3f(1.0,1.0,1.0);
                     glTexCoord2f(0.0,0.0);glVertex3f(k*L_CASE,i * H_ETAGE,j*W_CASE);
-                    glTexCoord2f(1,0.0);glVertex3f((k+1)*L_CASE,i* H_ETAGE,j*W_CASE);
-                    glTexCoord2f(1,1);glVertex3f((k+1)*L_CASE, i *H_ETAGE, (j+1)*W_CASE);
-                    glTexCoord2f(0.0,1);glVertex3f(k*L_CASE, i *H_ETAGE, (j+1)*W_CASE);
-		  glEnd();
-		  glDisable(GL_TEXTURE_2D);
+                    glTexCoord2f(0.5,0.0);glVertex3f((k+1)*L_CASE,i* H_ETAGE,j*W_CASE);
+                    glTexCoord2f(0.5,0.5);glVertex3f((k+1)*L_CASE, i *H_ETAGE, (j+1)*W_CASE);
+                    glTexCoord2f(0.0,0.5);glVertex3f(k*L_CASE, i *H_ETAGE, (j+1)*W_CASE);
+		    glBindTexture(GL_TEXTURE_2D, 0);
+		    glDisable(GL_TEXTURE_2D);
+		    glEnd();
+		  
                 }
                 if (batiment[i][j][k] == 0){
                     //Zone vide où on peut se déplacer
@@ -336,13 +339,15 @@ void affichage(){
                 }
                 else if (batiment[i][j][k] == 2){
                     //Téléporteur ascendant
-                    glBegin(GL_QUADS);
-                    glColor3f(0.9, 0.9,0.9);
-                    glVertex3f(k*L_CASE,i * H_ETAGE,j*W_CASE);
-                    glVertex3f((k+1)*L_CASE,i* H_ETAGE,j*W_CASE);
-                    glVertex3f((k+1)*L_CASE, i *H_ETAGE, (j+1)*W_CASE);
-                    glVertex3f(k*L_CASE, i *H_ETAGE, (j+1)*W_CASE);
-                    glEnd();
+		  glEnable(GL_TEXTURE_2D);
+		  glBegin(GL_QUADS);
+		  glColor3f(0.9, 0.9,0.9);
+		  glTexCoord2f(0.55,0.55);glVertex3f(k*L_CASE,i * H_ETAGE,j*W_CASE);
+		  glTexCoord2f(1,0.55);glVertex3f((k+1)*L_CASE,i* H_ETAGE,j*W_CASE);
+		  glTexCoord2f(1,1);glVertex3f((k+1)*L_CASE, i *H_ETAGE, (j+1)*W_CASE);
+		  glTexCoord2f(0.55,1);glVertex3f(k*L_CASE, i *H_ETAGE, (j+1)*W_CASE);
+		  glEnd();
+		  glDisable(GL_TEXTURE_2D);
                     nbcubes += 0;
                 }
                 else if (batiment[i][j][k] == 3){
@@ -634,8 +639,9 @@ int main(int argc, char **argv){
 
     glutCreateWindow("Trwa dai");
     glEnable(GL_DEPTH_TEST);
-    texture = ChargeTexture(texture, "Texture/Sol.bmp",632,632);
+    texture = ChargeTexture(texture, "Texture/Sol_2.bmp",632,632);
     mur = ChargeTexture(mur, "Texture/Mur.bmp",632,632);
+    //teleporteur = ChargeTexture(teleporteur, "Texture/Tp.bmp",632,632);
     glutDisplayFunc(affichage);
     glutKeyboardFunc(GererClavier);
     glutMouseFunc(GererCliqueSouris);
