@@ -6,14 +6,14 @@
 #include <math.h>
 #include <string.h>
 
-#define WIDTH 800
-#define LENGTH 800
+#define WIDTH 900
+#define LENGTH 900
 #define WORK_WIDTH 20
 #define WORK_LENGTH 20
 
 #define NB_ETAGE 3
-#define W_ETAGE 5
-#define L_ETAGE 5
+#define W_ETAGE 9
+#define L_ETAGE 9
 #define H_ETAGE 10
 
 //Minimum 6 et si possible pair
@@ -421,15 +421,14 @@ void GererClavier(unsigned char key, int x, int y){
     }
     if (key == 'o') {
       int *pos = posDansGrille();
-      pos[0] = (pos[0] >= NB_ETAGE) ? NB_ETAGE - 1 : pos[0];
-      if (((batiment[pos[0]][pos[1]][pos[2]] == 2) && (pos[0] + nbObjet < NB_ETAGE)) || ghosting == 1){	
+      if (ghosting == 1 || ((batiment[pos[0]][pos[1]][pos[2]] == 2) && (pos[0] + nbObjet < NB_ETAGE))){	
 	tmpy +=1;
       }
     }
     if (key == 'l') {
         int *pos = posDansGrille();
         pos[0] = (pos[0] >= NB_ETAGE) ? NB_ETAGE - 1 : pos[0];
-        if ( batiment[pos[0]][pos[1]][pos[2]] == 3 || ghosting == 1){
+        if ( ghosting == 1 || batiment[pos[0]][pos[1]][pos[2]] == 3){
             tmpy -=1;
         }
         else if (batiment[pos[0]][pos[1]][pos[2]] == 2 ){
@@ -484,7 +483,7 @@ void affichage(){
     glPushMatrix();
     glLoadIdentity();
     if(batiment[pos[0]][pos[1]][pos[2]] == 5){
-      char *s = "Rammasser l'objet avec 't'";
+      char *s = "Ramasser l'objet avec 't'";
       void * font = GLUT_BITMAP_TIMES_ROMAN_24;
       glRasterPos2i(WIDTH/2 - strlen(s)*5, LENGTH/1.9);
       for(int i = 0; i < (int)strlen(s); i++){
@@ -652,10 +651,10 @@ void affichage(){
         affichecube(listecubes[i*6],listecubes[i*6+1],listecubes[i*6+2],listecubes[i*6+3],listecubes[i*6+4],listecubes[i*6+5]);
     }
     
-
+    /*
     affichecube(-0.1,0,-0.1,0.1,1000,0.1);
     affichecube(0,-0.1,-0.1,1000,0.1,0.1);
-    
+    */
     glFlush();
 }
 
@@ -875,7 +874,7 @@ void construire_labyrinthe(){
 	}
 	else if (batiment[i][j][k] == 0){
 	  int rg = rand() % 100;
-	  if(rg < 10){
+	  if(rg < 8){
 	    batiment[i][j][k] = 5;
 	    nbObjet++;
 	  }
