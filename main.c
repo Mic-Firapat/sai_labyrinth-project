@@ -648,6 +648,8 @@ int main(int argc, char **argv){
     glutPassiveMotionFunc(GererMouvementSouris);
     glutIdleFunc(Animer);
     glutMainLoop();
+    FreeTextures(texture);
+    FreeTextures(mur);	
     exit(0);
 }
 
