@@ -58,14 +58,15 @@ GLuint ChargeTexture(GLuint tex, const char * fichier, int w, int h){
 
   unsigned char * data;
   FILE * file;
-
+  size_t warning;
 
   // Lecture fichier image
 
   file = fopen(fichier, "rb");
   if ( file == NULL) return 0;
   data = (unsigned char *)malloc(w*h*3);
-  fread(data, w*h*3,1,file);
+  warning = fread(data, w*h*3,1,file);
+  warning+=0;
   fclose(file);
 
   // Gentexture
@@ -253,6 +254,7 @@ void afficheObjet(float x1, float y1, float z1, float x2, float y2, float z2){
 
 // Gestion des évènements clic de la souris
 void GererCliqueSouris(int button, int state, int x, int y){
+  state+=0;
   if( ( (x >= 0) && (x <= WIDTH) ) && ( (y >= 0) && (y <= LENGTH) ) ){
     if(button == GLUT_LEFT_BUTTON){
       mouseIn = 1;
@@ -379,6 +381,7 @@ void collisions(float *x, float *y, float *z){
 }
 
 void GererClavier(unsigned char key, int x, int y){
+  x+=0; y+=0;
     //printf("Touche : %c\nSouris : %d %d\n",key,x,y);
     float tmpx = posx, tmpy = posy, tmpz = posz;
 
@@ -393,7 +396,6 @@ void GererClavier(unsigned char key, int x, int y){
     }
 
     if(key == 'g'){
-        printf("GHOSTING\n");
         ghosting = 1 - ghosting;
     }
     
@@ -418,11 +420,11 @@ void GererClavier(unsigned char key, int x, int y){
       tmpz += V_DEP*cos(angler);
     }
     if (key == 'o') {
-        int *pos = posDansGrille();
-        pos[0] = (pos[0] >= NB_ETAGE) ? NB_ETAGE - 1 : pos[0];
-        if (batiment[pos[0]][pos[1]][pos[2]] == 2 || ghosting == 1){
-            tmpy +=1;
-        }
+      int *pos = posDansGrille();
+      pos[0] = (pos[0] >= NB_ETAGE) ? NB_ETAGE - 1 : pos[0];
+      if (((batiment[pos[0]][pos[1]][pos[2]] == 2) && (pos[0] + nbObjet < NB_ETAGE)) || ghosting == 1){	
+	tmpy +=1;
+      }
     }
     if (key == 'l') {
         int *pos = posDansGrille();
@@ -445,11 +447,13 @@ void GererClavier(unsigned char key, int x, int y){
         angle = (angle <360 - V_ROTAT) ? angle + V_ROTAT : angle - 360 + V_ROTAT;
     }
 
-    if (key == 'h'){
-      if( affiche_texte == 1){
-	affiche_texte = 0;
-      }
-      else { affiche_texte++;}
+    if (key == 't'){
+        int *pos = posDansGrille();
+        if (batiment[pos[0]][pos[1]][pos[2]] == 5){
+            nbObjet --;
+            batiment[pos[0]][pos[1]][pos[2]] = 0;
+        }
+        
     }
 
 
@@ -468,28 +472,46 @@ void affichage(){
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 
-    if(affiche_texte){
-      //glDisable(GL_TEXTURE_2D);
-      glColor3f(1,1,1);
-      glMatrixMode(GL_PROJECTION);
-      glPushMatrix();
-      glLoadIdentity();
-      gluOrtho2D(0.0,WIDTH,0.0,LENGTH);
-      glMatrixMode(GL_MODELVIEW);
-      glPushMatrix();
-      glLoadIdentity();
-      glRasterPos2i(WIDTH/2, LENGTH/2);
-      char *s = "Test";
+    int *pos = posDansGrille();
+
+    //glDisable(GL_TEXTURE_2D);
+    glColor3f(1,0,1);
+    glMatrixMode(GL_PROJECTION);
+    glPushMatrix();
+    glLoadIdentity();
+    gluOrtho2D(0.0,WIDTH,0.0,LENGTH);
+    glMatrixMode(GL_MODELVIEW);
+    glPushMatrix();
+    glLoadIdentity();
+    if(batiment[pos[0]][pos[1]][pos[2]] == 5){
+      char *s = "Rammasser l'objet avec 't'";
       void * font = GLUT_BITMAP_TIMES_ROMAN_24;
+      glRasterPos2i(WIDTH/2 - strlen(s)*5, LENGTH/1.9);
       for(int i = 0; i < (int)strlen(s); i++){
 	glutBitmapCharacter(font,s[i]);
       }
-      glMatrixMode(GL_PROJECTION);
-      glPopMatrix();
-      glMatrixMode(GL_MODELVIEW);
-      glPopMatrix();
-      //glEnable(GL_TEXTURE_2D);
     }
+    if(pos[0] + nbObjet >= NB_ETAGE){
+      char *s = "Vous devez trouver l'objet de cet etage";
+      void * font = GLUT_BITMAP_TIMES_ROMAN_24;
+      glRasterPos2i(WIDTH/2 - strlen(s)*10, LENGTH/6);
+      for(int i = 0; i < (int)strlen(s); i++){
+	glutBitmapCharacter(font,s[i]);
+      }
+    }
+    else {
+      char *s = "Vous pouvez prendre l'ascenseur";
+      void * font = GLUT_BITMAP_TIMES_ROMAN_24;
+      glRasterPos2i(WIDTH/2 - strlen(s)*10, LENGTH/6);
+      for(int i = 0; i < (int)strlen(s); i++){
+	glutBitmapCharacter(font,s[i]);
+      }
+    }
+    glMatrixMode(GL_PROJECTION);
+    glPopMatrix();
+    glMatrixMode(GL_MODELVIEW);
+    glPopMatrix();
+    //glEnable(GL_TEXTURE_2D);
 
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
