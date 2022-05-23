@@ -1,4 +1,4 @@
-CC = gcc
+CC = gcc -g
 OPTIONS = -W -Wall -pedantic -O3
 NOM_EXE = executable
 all : main.c
