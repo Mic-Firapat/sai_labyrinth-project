@@ -11,8 +11,8 @@
 #define WORK_LENGTH 20
 
 #define NB_ETAGE 3
-#define W_ETAGE 15
-#define L_ETAGE 15
+#define W_ETAGE 5
+#define L_ETAGE 5
 #define H_ETAGE 10
 
 //Minimum 6 et si possible pair
@@ -20,8 +20,8 @@
 #define L_CASE 30
 
 #define V_DEP 2
-#define V_ROTAT 3
-
+#define V_ROTAT 5
+#define H_VIEW 5 //Hauteur de vue du perso
 
 int ***batiment;// Tableau de grilles, représente le batiment
 //0 : libre, 1 : Mur complet , 2 : Téléporteur montant, 3 : Téléporteur descendant
@@ -29,7 +29,7 @@ int *murs_complexes;
 //Tableau utilisé pour garder la taille des murs complexes (horizontaux et verticaux)
 float angle = 270;
 float posx = 5,
-    posy = 5,
+    posy = H_VIEW,
     posz = 15;
 float lookx = -15,
     looky = 0,
@@ -42,6 +42,17 @@ int mouseIn = 0,
 
 float *listecubes;
 int nbcubes;
+
+//Donne la position dans la grille du joueur actuellement (uniquement utilisée pour certains trucs
+int *posDansGrille(){
+    int *pos = malloc(sizeof(int)*3);
+    int i = (posy - H_VIEW) / (H_ETAGE);
+    int j = posz / W_CASE;
+    int k = posx / L_CASE;
+    pos[0] = i; pos[1] = j; pos[2] = k;
+    return pos;
+    
+}
 //Affiche le cube décrit par les deux sommets opposés (x1,y1,z1) et (x2,y2,z2)
 void affichecube(float x1, float y1, float z1, float x2, float y2, float z2){
     glBegin(GL_QUADS);
@@ -113,8 +124,8 @@ void GererMouvementSouris(int x, int y){
   
   if(mouseIn){
 
-    if( dx > 0) {angle -= 0.5;}
-    if( dx < 0) {angle += 0.5;}
+    if( dx > 0) {angle -= V_ROTAT/2;}
+    if( dx < 0) {angle += V_ROTAT/2;}
 
     if( dy > 0) {looky += 0.5;}
     if( dy < 0) {looky -= 0.5;}
@@ -133,30 +144,42 @@ void GererMouvementSouris(int x, int y){
   
 }
 
+void collisions(float *x, float *y, float *z){
+    //Change les valeurs en paramètres pour qu'elles correspondent à l'endroit où va se déplacer le personnage
+    int prout = 0;
+    prout ++;
+}
 void GererClavier(unsigned char key, int x, int y){
     //printf("Touche : %c\nSouris : %d %d\n",key,x,y);
+    float tmpx = posx, tmpy = posy, tmpz = posz;
     if (key == 'z') {
         float angler = M_PI / 180 * angle;
-        posx += V_DEP*cos(angler);
-        posz +=V_DEP*sin(angler);
+        tmpx += V_DEP*cos(angler);
+        tmpz +=V_DEP*sin(angler);
     }
     if (key == 's') {
         float angler = M_PI / 180 * angle;
-        posx += -V_DEP*cos(angler);
-        posz += -V_DEP*sin(angler);
+        tmpx += -V_DEP*cos(angler);
+        tmpz += -V_DEP*sin(angler);
     }
     if( key == 'q') {
       float angler =  M_PI / 180 * angle;
-      posx += V_DEP*sin(angler);
-      posz += -V_DEP*cos(angler);
+      tmpx += V_DEP*sin(angler);
+      tmpz += -V_DEP*cos(angler);
     }
     if ( key == 'd') {
       float angler = M_PI / 180 * angle;
-      posx += -V_DEP*sin(angler);
-      posz += V_DEP*cos(angler);
+      tmpx += -V_DEP*sin(angler);
+      tmpz += V_DEP*cos(angler);
     }
-    if (key == 'o') { posy +=1;}
-    if (key == 'l') { posy -= 1;}
+    if (key == 'o') {
+        int *pos = posDansGrille();
+        pos[0] = (pos[0] >= NB_ETAGE) ? NB_ETAGE - 1 : pos[0];
+        if (batiment[pos[0]][pos[1]][pos[2]] == 2){
+            tmpy +=1;
+        }
+    }
+    if (key == 'l') { tmpy -= 1;}
     if (key == 'p') {looky += 1;}
     if (key == 'm') {looky -= 1;}
     if (key == 'a'){
@@ -169,6 +192,10 @@ void GererClavier(unsigned char key, int x, int y){
     if ( key == 27){
       exit(0);
     }
+
+    collisions(&tmpx,&tmpy,&tmpz);
+    posx = tmpx, posy = tmpy, posz = tmpz;
+    
 }
 
 void affichage(){
@@ -188,13 +215,6 @@ void affichage(){
 
     nbcubes = 0;
     for (int i = 0; i < NB_ETAGE; i++){
-        glBegin(GL_QUADS);
-        glColor3f(0.9, 0.64,0);
-        glVertex3f(0,i * H_ETAGE,0);
-        glVertex3f(L_ETAGE*L_CASE,i* H_ETAGE,0);
-        glVertex3f(L_ETAGE*L_CASE, i *H_ETAGE, W_ETAGE * W_CASE);
-        glVertex3f(0, i *H_ETAGE, W_ETAGE * W_CASE);
-        glEnd();
         for (int j = 0; j < W_ETAGE; j++){
             
             for (int k = 0; k < L_ETAGE; k++){
@@ -222,11 +242,19 @@ void affichage(){
                     nbcubes ++;
                 }
                 else if (batiment[i][j][k] == 2){
-                    //Téléporteur ascendant ou rampe à l'avenir
+                    //Téléporteur ascendant
+                    glBegin(GL_QUADS);
+                    glColor3f(0.9, 0.9,0.9);
+                    glVertex3f(k*L_CASE,i * H_ETAGE,j*W_CASE);
+                    glVertex3f((k+1)*L_CASE,i* H_ETAGE,j*W_CASE);
+                    glVertex3f((k+1)*L_CASE, i *H_ETAGE, (j+1)*W_CASE);
+                    glVertex3f(k*L_CASE, i *H_ETAGE, (j+1)*W_CASE);
+                    glEnd();
                     nbcubes += 0;
                 }
                 else if (batiment[i][j][k] == 3){
-                    //Téléporteur descendant ou juste rien à l'avenir
+                    //Téléporteur descendant
+                    //On affiche rien c'est un trou
                     nbcubes += 0;
                 }
                 else if (batiment[i][j][k] == 4){
@@ -341,11 +369,7 @@ void affiche_grilles(){
     }
 }
 
-int main(int argc, char **argv){
-
-
-    srand(time(NULL));
-    listecubes = malloc(sizeof(float) * 6 * NB_ETAGE*W_ETAGE*L_ETAGE * 2);
+void construire_labyrinthe(){
     batiment = malloc(sizeof(int)*NB_ETAGE*W_ETAGE*L_ETAGE);
     murs_complexes = malloc(sizeof(int)* NB_ETAGE*W_ETAGE*L_ETAGE*2);
     for (int i = 0; i < NB_ETAGE;i++){
@@ -378,29 +402,42 @@ int main(int argc, char **argv){
         {0,2}
     };
     int **historique = malloc(sizeof(int)*W_ETAGE*L_ETAGE*2);
+    int rampe[2] = {-1,-1};
     for (int aux = 0; aux < W_ETAGE*L_ETAGE;aux++){
         historique[aux] = malloc(sizeof(int)*2);
         historique[aux][0] = -1;
         historique[aux][1] = -1;
     }
+
     for (int i = 0; i < NB_ETAGE;i ++){
+
         for (int aux = 0; aux < W_ETAGE*L_ETAGE;aux++){
             historique[aux][0] = -1;
             historique[aux][1] = -1;
         }
         int courant = 0;
-        historique[courant][0] = 1;
-        historique[courant][1] = 1;
-        batiment[i][historique[courant][0]][historique[courant][1]] = 2;
+        if (i == 0){
+            historique[courant][0] = 1;
+            historique[courant][1] = 1;
+            batiment[i][historique[courant][0]][historique[courant][1]] = 2;
+        }
+        else {
+            historique[courant][0] = rampe[0];
+            historique[courant][1] = rampe[1];
+            batiment[i][rampe[0]][rampe[1]] = -3;
+        }
+        rampe[0] = -1; rampe[1] = -1;
+        
         do {
             //Considération des voisins
             int voisins[4][4];
             int nbvoisins_possibles = 0;
             for (int aux = 0; aux < 4; aux ++){
-                int tmpx = historique[courant][0] + aux_voisins[aux][0];
-                int tmpz = historique[courant][1] + aux_voisins[aux][1];
-                int tmpx2 = historique[courant][0] + aux_voisins[aux][0] / 2;
-                int tmpz2 = historique[courant][1] + aux_voisins[aux][1] / 2;
+                int tmpx, tmpz, tmpx2, tmpz2;
+                tmpx = historique[courant][0] + aux_voisins[aux][0];
+                tmpz = historique[courant][1] + aux_voisins[aux][1];
+                tmpx2 = historique[courant][0] + aux_voisins[aux][0] / 2;
+                tmpz2 = historique[courant][1] + aux_voisins[aux][1] / 2;
                 if (tmpx > 0 && tmpx < (L_ETAGE - 1) && tmpz > 0 && tmpz < (W_ETAGE - 1) && tmpx2 > 0 && tmpx2 < (L_ETAGE - 1) && tmpz2 > 0 && tmpz2 < (W_ETAGE - 1) && (batiment[i][tmpx][tmpz] == 0 || batiment[i][tmpx][tmpz] == 3) && (batiment[i][tmpx2][tmpz2] != 1)){
                     //Voisin envisageable
                    
@@ -413,6 +450,11 @@ int main(int argc, char **argv){
             }
             if (nbvoisins_possibles == 0 && courant != 0){
                 //Si pas de voisins on revient en arrière si on peut
+                if (rampe[0] == -1){
+                    batiment[i][historique[courant][0]][historique[courant][1]] = -2;
+                    rampe[0] = historique[courant][0];
+                    rampe[1] = historique[courant][1];
+                }
                 courant -= 1;
             }
             else if (nbvoisins_possibles != 0){
@@ -453,6 +495,9 @@ int main(int argc, char **argv){
                 else if (batiment[i][j][k] == 2){
                     batiment[i][j][k] = 0;
                 }
+                else if (batiment[i][j][k] < 0){
+                    batiment[i][j][k] = batiment[i][j][k] * (-1);
+                }
             }
         }
     }
@@ -472,11 +517,18 @@ int main(int argc, char **argv){
                     if (murs_complexes[aux + 1] % 2 == 1){
                         murs_complexes[aux + 1] += -1;
                     }
-                    printf("%d %d\n",murs_complexes[aux],murs_complexes[aux + 1]);
                 }
             }
         }
     }
+}
+int main(int argc, char **argv){
+
+
+    srand(time(NULL));
+    listecubes = malloc(sizeof(float) * 6 * NB_ETAGE*W_ETAGE*L_ETAGE * 2);
+
+    construire_labyrinthe();
     affiche_grilles();
     //lire_liste_cubes("listecubes");
     glutInit(&argc, argv);
