@@ -6,8 +6,8 @@
 #include <math.h>
 #include <string.h>
 
-#define WIDTH 720
-#define LENGTH 720
+#define WIDTH 800
+#define LENGTH 800
 #define WORK_WIDTH 20
 #define WORK_LENGTH 20
 
@@ -28,10 +28,10 @@ int ***batiment;// Tableau de grilles, représente le batiment
 //0 : libre, 1 : Mur complet , 2 : Téléporteur montant, 3 : Téléporteur descendant
 int *murs_complexes;
 //Tableau utilisé pour garder la taille des murs complexes (horizontaux et verticaux)
-float angle = 270;
-float posx = 5,
+float angle = 90;
+float posx = L_CASE * 3/2,
     posy = H_VIEW,
-    posz = 15;
+    posz = W_CASE * 3/2;
 float lookx = -15,
     looky = 0,
     lookz = -15;
@@ -45,7 +45,7 @@ float *listecubes;
 int nbcubes;
 
 
-int affiche_texte = 0, xray=0, hitbox=0;
+int affiche_texte = 0, xray=0, hitbox=0, ghosting = 0;
 int nbObjet = 0;
 
 //Texture
@@ -296,9 +296,88 @@ void GererMouvementSouris(int x, int y){
 
 void collisions(float *x, float *y, float *z){
     //Change les valeurs en paramètres pour qu'elles correspondent à l'endroit où va se déplacer le personnage
-    int prout = 0;
-    prout ++;
+    int non = 0;
+    int i = (*y - H_VIEW) / (H_ETAGE);
+    int j = *z / W_CASE;
+    int k = *x / L_CASE;
+    if (batiment[i][j][k] != 2 && batiment[i][j][k] != 3){
+        int aux = (*y - H_VIEW);
+        if (aux % H_ETAGE != 0){
+            if ((int)(*y) % H_ETAGE < H_VIEW){
+                non = 1;
+            }
+            else {
+                *y = i*H_ETAGE + H_VIEW;
+                non = 0;
+            }
+        }
+        
+    }
+    if (batiment[i][j][k] == 1){
+        //Juste pas le droit de se déplacer là
+        non = 1;
+    }
+    else if (batiment[i][j][k] == 4){
+        //On vérifie les colisions avec les deux murs
+        //Mur vertical et horizontal
+        //Partie verticale
+        int aux = i * L_ETAGE * W_ETAGE + j*L_ETAGE + k;
+        int tmp = k*L_CASE + 0.5 * L_CASE;
+        int tmp2 = murs_complexes[aux] / 2;
+        if (
+            (*x >= tmp - tmp2) &&
+            (*x <= tmp + tmp2) &&
+            (*z >= j * W_CASE) &&
+            (*z <= (j+1) * W_CASE)){
+            //Dans la partie verticale donc pas possible
+            non = 1;
+        }
+        tmp = j*W_CASE + 0.5*W_CASE;
+        tmp2 = murs_complexes[aux + 1] / 2;
+        if (
+            (*x >= k*L_CASE) &&
+            (*x <= (k+1)*L_CASE) &&
+            (*z >= tmp - tmp2) &&
+            (*z <= tmp + tmp2)
+            ) {
+            //Partie horizontale
+            //Pas possible non plus
+            non = 1;
+        }        
+    }
+    else if( batiment[i][j][k] >= 6 &&  (batiment[i][j][k] % 2 == 0)){
+        //Mur vertical
+        int tmp = k*L_CASE + 0.5 * L_CASE;
+        int tmp2 = batiment[i][j][k] / 2;
+         if (
+            (*x >= tmp - tmp2) &&
+            (*x <= tmp + tmp2) &&
+            (*z >= j * W_CASE) &&
+            (*z <= (j+1) * W_CASE)){
+            //Dans la partie verticale donc pas possible
+            non = 1;
+         }
+    }
+     else if( batiment[i][j][k] >= 6 &&  (batiment[i][j][k] % 2 == 1)){
+        //Mur horiontal
+        int tmp = j*W_CASE + 0.5*W_CASE;
+        int tmp2 = batiment[i][j][k] / 2;
+        if (
+            (*x >= k*L_CASE) &&
+            (*x <= (k+1)*L_CASE) &&
+            (*z >= tmp - tmp2) &&
+            (*z <= tmp + tmp2)
+            ) {
+            //Partie horizontale
+            //Pas possible non plus
+            non = 1;
+        }        
+    }
+    if (non){
+        *x = posx, *y = posy, *z = posz;
+    }
 }
+
 void GererClavier(unsigned char key, int x, int y){
     //printf("Touche : %c\nSouris : %d %d\n",key,x,y);
     float tmpx = posx, tmpy = posy, tmpz = posz;
@@ -309,12 +388,13 @@ void GererClavier(unsigned char key, int x, int y){
     }
 
     if( key == 'b'){
-      if(hitbox == 0) {hitbox++;}
-      else {hitbox--;}
+        if(hitbox == 0) {hitbox++;}
+        else {hitbox--;}
     }
 
     if(key == 'g'){
-      printf("GHOSTING\n");
+        printf("GHOSTING\n");
+        ghosting = 1 - ghosting;
     }
     
     if (key == 'z') {
@@ -340,11 +420,22 @@ void GererClavier(unsigned char key, int x, int y){
     if (key == 'o') {
         int *pos = posDansGrille();
         pos[0] = (pos[0] >= NB_ETAGE) ? NB_ETAGE - 1 : pos[0];
-        if (batiment[pos[0]][pos[1]][pos[2]] == 2){
+        if (batiment[pos[0]][pos[1]][pos[2]] == 2 || ghosting == 1){
             tmpy +=1;
         }
     }
-    if (key == 'l') { tmpy -= 1;}
+    if (key == 'l') {
+        int *pos = posDansGrille();
+        pos[0] = (pos[0] >= NB_ETAGE) ? NB_ETAGE - 1 : pos[0];
+        if ( batiment[pos[0]][pos[1]][pos[2]] == 3 || ghosting == 1){
+            tmpy -=1;
+        }
+        else if (batiment[pos[0]][pos[1]][pos[2]] == 2 ){
+            if (tmpy - pos[0]*H_ETAGE > H_VIEW){
+                tmpy -=1;
+            }
+        }
+    }
     if (key == 'p') {looky += 1;}
     if (key == 'm') {looky -= 1;}
     if (key == 'a'){
@@ -366,7 +457,9 @@ void GererClavier(unsigned char key, int x, int y){
       exit(0);
     }
 
-    collisions(&tmpx,&tmpy,&tmpz);
+    if (ghosting == 0){
+        collisions(&tmpx,&tmpy,&tmpz);
+    }
     posx = tmpx, posy = tmpy, posz = tmpz;
     
 }
